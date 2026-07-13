@@ -2,7 +2,7 @@
 // שים לב: כל הנתונים (טיפולים/הקלטות/תמלולים) נשמרים ב-IndexedDB ולא כאן;
 // ה-service worker אחראי רק על קוד/עיצוב האפליקציה עצמה.
 
-const CACHE_NAME = "physio-diary-shell-v1";
+const CACHE_NAME = "physio-diary-shell-v3";
 const SHELL_FILES = [
   "./",
   "./index.html",
