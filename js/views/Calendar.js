@@ -28,8 +28,8 @@ export default function CalendarView({ navigate }) {
     })();
   }, [weekStart]);
 
-  function treatmentAt(dateKey, hour) {
-    return treatments.find((t) => t.date === dateKey && Number(t.startTime.split(":")[0]) === hour);
+  function treatmentsAt(dateKey, hour) {
+    return treatments.filter((t) => t.date === dateKey && Number(t.startTime.split(":")[0]) === hour);
   }
 
   return html`
@@ -42,7 +42,7 @@ export default function CalendarView({ navigate }) {
         <button class="text-[--pine] text-2xl px-2" onClick=${() => setWeekStart(addDays(weekStart, 7))}>‹</button>
       </div>
 
-      <div class="grid grid-cols-6 border-b border-[--border] bg-white sticky top-0 z-10 text-center text-xs">
+      <div class="grid grid-cols-6 divide-x divide-x-reverse divide-[--border] border-b border-[--border] bg-white sticky top-0 z-10 text-center text-xs">
         <div class="py-2"></div>
         ${days.map((d) => html`
           <div class="py-2 font-medium text-[--pine]" key=${toDateKey(d)}>
@@ -53,23 +53,27 @@ export default function CalendarView({ navigate }) {
 
       <div class="flex-1 overflow-y-auto">
         ${hours.map((hour) => html`
-          <div class="grid grid-cols-6 border-b border-[--border]/60" key=${hour}>
+          <div class="grid grid-cols-6 divide-x divide-x-reverse divide-[--border] border-b border-[--border]/60" key=${hour}>
             <div class="py-3 text-[10px] font-mono text-[--ink]/40 text-center">${hourLabel(hour)}</div>
             ${days.map((d) => {
               const dateKey = toDateKey(d);
-              const t = treatmentAt(dateKey, hour);
-              if (t) {
-                const patient = patientsById[t.patientId];
-                return html`
-                  <button key=${dateKey} onClick=${() => navigate("treatmentDetail", { treatmentId: t.id })}
-                    class="m-0.5 rounded-lg p-1 text-[10px] text-right ${t.status === "completed" ? "bg-[--sage]/20 text-[--sage]" : "bg-[--clay]/15 text-[--clay]"}">
-                    <div class="font-medium truncate">${patient?.name || "מטופל"}</div>
-                  </button>
-                `;
-              }
+              const slotTreatments = treatmentsAt(dateKey, hour);
               return html`
-                <button key=${dateKey} onClick=${() => navigate("treatmentForm", { date: dateKey, startTime: hourLabel(hour) })}
-                  class="m-0.5 rounded-lg hover:bg-[--pine]/5 active:bg-[--pine]/10"></button>
+                <div key=${dateKey} class="m-0.5 flex flex-col gap-0.5">
+                  ${slotTreatments.map((t) => {
+                    const patient = patientsById[t.patientId];
+                    return html`
+                      <button key=${t.id} onClick=${() => navigate("treatmentDetail", { treatmentId: t.id })}
+                        class="rounded-lg p-1 text-[10px] text-right ${t.status === "completed" ? "bg-[--sage]/20 text-[--sage]" : "bg-[--clay]/15 text-[--clay]"}">
+                        <div class="font-medium truncate">${patient?.name || "מטופל"}</div>
+                      </button>
+                    `;
+                  })}
+                  <button onClick=${() => navigate("treatmentForm", { date: dateKey, startTime: hourLabel(hour) })}
+                    class="rounded-lg text-[10px] text-[--pine]/40 border border-dashed border-[--pine]/20 py-0.5 hover:bg-[--pine]/5 active:bg-[--pine]/10">
+                    +
+                  </button>
+                </div>
               `;
             })}
           </div>
