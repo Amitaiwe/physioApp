@@ -18,8 +18,9 @@ export class TreatmentRecorder {
     this.onTranscriptUpdate = null;
   }
 
-  async start({ onTranscriptUpdate } = {}) {
+  async start({ onTranscriptUpdate, onError } = {}) {
     this.onTranscriptUpdate = onTranscriptUpdate || null;
+    this.onError = onError || null;
     this.chunks = [];
     this.transcriptText = "";
 
@@ -44,19 +45,35 @@ export class TreatmentRecorder {
         this.transcriptText = finalText.trim();
         if (this.onTranscriptUpdate) this.onTranscriptUpdate(this.transcriptText);
       };
-      this.recognition.onerror = () => {
-        /* ממשיכים בשקט — ההקלטה עצמה לא תלויה בתמלול */
+      this.recognition.onerror = (event) => {
+        console.error("SpeechRecognition error:", event.error);
+        if (this.onError) this.onError(event.error);
+      };
+      this.recognition.onend = () => {
+        // בדפדפנים מסוימים (כרום) ה-recognition נעצר לבד אחרי שקט ממושך.
+        // מפעילים אותו מחדש כל עוד עדיין מקליטים, כדי לא לאבד המשך דיבור.
+        if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+          try {
+            this.recognition.start();
+          } catch {
+            /* מתעלמים אם כבר רץ */
+          }
+        }
       };
       try {
         this.recognition.start();
-      } catch {
-        /* אם כבר רץ / לא נתמך - מתעלמים, ההקלטה עדיין תישמר */
+      } catch (err) {
+        console.error("SpeechRecognition start failed:", err);
+        if (this.onError) this.onError(String(err));
       }
+    } else if (this.onError) {
+      this.onError("not-supported");
     }
   }
 
   async stop() {
     if (this.recognition) {
+      this.recognition.onend = null; // מבטלים את ההפעלה-מחדש האוטומטית לפני העצירה הסופית
       try {
         this.recognition.stop();
       } catch {}
