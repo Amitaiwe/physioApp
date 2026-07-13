@@ -15,6 +15,7 @@ export default function TreatmentDetail({ navigate, treatmentId }) {
   const [isRecording, setIsRecording] = useState(false);
   const [liveText, setLiveText] = useState("");
   const [editingText, setEditingText] = useState(false);
+  const [speechError, setSpeechError] = useState(null);
   const recorderRef = useRef(null);
 
   async function load() {
@@ -40,8 +41,9 @@ export default function TreatmentDetail({ navigate, treatmentId }) {
   async function startRecording() {
     recorderRef.current = new TreatmentRecorder();
     setLiveText("");
+    setSpeechError(null);
     setIsRecording(true);
-    await recorderRef.current.start({ onTranscriptUpdate: setLiveText });
+    await recorderRef.current.start({ onTranscriptUpdate: setLiveText, onError: setSpeechError });
   }
 
   async function stopRecording() {
@@ -106,6 +108,10 @@ export default function TreatmentDetail({ navigate, treatmentId }) {
 
         ${!isSpeechRecognitionSupported() && html`
           <p class="text-xs text-[--clay]">תמלול אוטומטי לא נתמך במכשיר זה — ניתן עדיין להקליט ולהקליד תמלול ידני.</p>
+        `}
+
+        ${speechError && html`
+          <p class="text-xs text-[--clay]">שגיאת תמלול: ${speechError} — ההקלטה עצמה עדיין נשמרת ותקינה.</p>
         `}
 
         ${isRecording
